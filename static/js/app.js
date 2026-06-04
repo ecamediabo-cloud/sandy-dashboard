@@ -12,6 +12,12 @@ const App = {
 
   // ── INIT ──────────────────────────────────────────────────────
   async init() {
+    // Vincular login siempre al arrancar
+    document.getElementById('login-form').addEventListener('submit', e => {
+      e.preventDefault();
+      this.login();
+    });
+
     const me = await fetch('/api/me').then(r => r.json());
     if (me.autenticado) {
       this.usuario = me.usuario;
@@ -54,12 +60,6 @@ const App = {
 
   // ── EVENTS ────────────────────────────────────────────────────
   bindEvents() {
-    // Login form
-    document.getElementById('login-form').addEventListener('submit', e => {
-      e.preventDefault();
-      this.login();
-    });
-
     // Logout
     document.getElementById('logout-btn').addEventListener('click', () => this.logout());
 
