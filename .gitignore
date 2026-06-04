@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pkl
+*.db
+datos_subidos/*.csv
+datos_subidos/*.xlsx
+datos_subidos/meta_token.json
+historial_contactos.json
+.env
+venv/

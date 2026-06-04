@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sandy Erhard · Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════ LOGIN ═══════════════════════════════════ -->
+<div id="login-screen" class="login-screen">
+  <div class="login-bg">
+    <div class="login-orb orb1"></div>
+    <div class="login-orb orb2"></div>
+    <div class="login-orb orb3"></div>
+  </div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">🏠</div>
+      <h1 class="login-title">Sandy Erhard</h1>
+      <p class="login-subtitle">Real Estate · Gestión de Leads</p>
+    </div>
+    <form id="login-form" class="login-form">
+      <div class="field-group">
+        <label>Usuario</label>
+        <div class="field-wrap">
+          <span class="field-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <input type="text" id="login-usuario" placeholder="Ingresa tu usuario" autocomplete="username" required>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Contraseña</label>
+        <div class="field-wrap">
+          <span class="field-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <input type="password" id="login-password" placeholder="Ingresa tu contraseña" autocomplete="current-password" required>
+        </div>
+      </div>
+      <div id="login-error" class="login-error hidden">Usuario o contraseña incorrectos</div>
+      <button type="submit" class="btn-login">
+        <span id="login-btn-text">Ingresar al Dashboard</span>
+        <span id="login-spinner" class="btn-spinner hidden">
+          <svg class="spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        </span>
+      </button>
+    </form>
+    <div class="login-footer">Desarrollado por <strong>ECA MEDIA BO</strong> · © 2026</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ APP SHELL ══════════════════════════════ -->
+<div id="app" class="app hidden">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <span class="sidebar-logo-icon">🏠</span>
+        <div>
+          <div class="sidebar-brand">Sandy Dashboard</div>
+          <div class="sidebar-version">v2.0</div>
+        </div>
+      </div>
+      <button id="sidebar-toggle" class="sidebar-toggle" title="Colapsar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-section="dashboard">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </span>
+        <span class="nav-label">Dashboard</span>
+      </button>
+      <button class="nav-item" data-section="leads">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <span class="nav-label">Leads</span>
+        <span id="leads-badge" class="nav-badge">0</span>
+      </button>
+      <button class="nav-item" data-section="exportar" id="admin-only-export" style="display:none">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </span>
+        <span class="nav-label">Exportar</span>
+      </button>
+      <button class="nav-item" data-section="subir" id="admin-only-upload" style="display:none">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </span>
+        <span class="nav-label">Subir Archivos</span>
+      </button>
+      <button class="nav-item" data-section="meta" id="admin-only-meta" style="display:none">
+        <span class="nav-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </span>
+        <span class="nav-label">Meta Ads</span>
+        <span id="meta-status-dot" class="status-dot red"></span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="user-avatar">A</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name-sidebar">Admin</div>
+          <div class="user-role" id="user-role-sidebar">Administrador</div>
+        </div>
+      </div>
+      <button id="logout-btn" class="btn-logout" title="Cerrar sesión">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main-content" class="main-content">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="mobile-menu-btn" class="mobile-menu-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
+          <h2 id="page-title" class="page-title">Dashboard</h2>
+          <p id="page-subtitle" class="page-subtitle">Resumen general de leads</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div id="last-update" class="last-update"></div>
+        <button id="refresh-btn" class="btn-icon" title="Actualizar datos">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── SECCIÓN DASHBOARD ── -->
+    <section id="section-dashboard" class="section active">
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-gold">
+          <div class="kpi-label">Total Leads</div>
+          <div class="kpi-value" id="kpi-total">—</div>
+          <div class="kpi-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+        </div>
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-label">Leads Hoy</div>
+          <div class="kpi-value" id="kpi-hoy">—</div>
+          <div class="kpi-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <div class="kpi-label">Últimos 7 días</div>
+          <div class="kpi-value" id="kpi-semana">—</div>
+          <div class="kpi-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+        </div>
+        <div class="kpi-card kpi-purple">
+          <div class="kpi-label">Proyectos</div>
+          <div class="kpi-value" id="kpi-proyectos">—</div>
+          <div class="kpi-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Leads por Proyecto</h3>
+          </div>
+          <div id="chart-proyecto" class="chart-container"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Plataforma (FB / IG)</h3>
+          </div>
+          <div id="chart-plataforma" class="chart-container"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Leads por Presupuesto</h3>
+          </div>
+          <div id="chart-presupuesto" class="chart-container"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Tipo de Crédito</h3>
+          </div>
+          <div id="chart-credito" class="chart-container"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECCIÓN LEADS ── -->
+    <section id="section-leads" class="section hidden">
+      <!-- Filtros -->
+      <div class="filters-bar">
+        <div class="filters-row">
+          <div class="filter-group">
+            <label>Buscar</label>
+            <div class="search-wrap">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="filter-busqueda" placeholder="Nombre del lead..." class="filter-input search-input">
+            </div>
+          </div>
+          <div class="filter-group">
+            <label>Proyecto</label>
+            <select id="filter-proyecto" class="filter-select" multiple size="1"></select>
+          </div>
+          <div class="filter-group">
+            <label>Presupuesto</label>
+            <select id="filter-presupuesto" class="filter-select" multiple size="1"></select>
+          </div>
+          <div class="filter-group">
+            <label>Crédito</label>
+            <select id="filter-credito" class="filter-select" multiple size="1"></select>
+          </div>
+          <div class="filter-group">
+            <label>Plataforma</label>
+            <select id="filter-plataforma" class="filter-select" multiple size="1"></select>
+          </div>
+          <div class="filter-group">
+            <label>Campaña</label>
+            <select id="filter-campana" class="filter-select" multiple size="1"></select>
+          </div>
+        </div>
+        <div class="filters-row filters-row-2">
+          <div class="filter-group">
+            <label>Fecha desde</label>
+            <input type="date" id="filter-fecha-inicio" class="filter-input">
+          </div>
+          <div class="filter-group">
+            <label>Fecha hasta</label>
+            <input type="date" id="filter-fecha-fin" class="filter-input">
+          </div>
+          <div class="filter-group filter-actions">
+            <button id="btn-aplicar-filtros" class="btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              Aplicar Filtros
+            </button>
+            <button id="btn-limpiar-filtros" class="btn-ghost">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Limpiar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de leads -->
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="table-info">
+            <span id="leads-count-label">0 leads encontrados</span>
+          </div>
+          <div class="table-actions">
+            <button class="btn-icon-sm" id="quick-export-excel" title="Exportar Excel">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Excel
+            </button>
+            <button class="btn-icon-sm" id="quick-export-csv" title="Exportar CSV">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              CSV
+            </button>
+            <button class="btn-icon-sm" id="quick-export-pdf" title="Exportar PDF">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              PDF
+            </button>
+            <button class="btn-icon-sm" id="quick-export-html" title="Exportar HTML">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              HTML
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="leads-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Teléfono</th>
+                <th>Correo</th>
+                <th>Presupuesto</th>
+                <th>Crédito</th>
+                <th>Proyecto</th>
+                <th>Plataforma</th>
+                <th>Fecha</th>
+                <th>Contactar</th>
+              </tr>
+            </thead>
+            <tbody id="leads-tbody">
+              <tr><td colspan="10" class="table-empty">
+                <div class="empty-state">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  <p>Cargando leads...</p>
+                </div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECCIÓN EXPORTAR ── -->
+    <section id="section-exportar" class="section hidden">
+      <div class="export-grid">
+        <div class="export-card" id="exp-excel">
+          <div class="export-icon export-icon-green">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <h3>Excel</h3>
+          <p>Exporta todos los leads filtrados en formato .xlsx listo para abrir en Excel.</p>
+          <button class="btn-export btn-export-green" onclick="exportar('excel')">Descargar Excel</button>
+        </div>
+
+        <div class="export-card" id="exp-csv">
+          <div class="export-icon export-icon-blue">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <h3>CSV</h3>
+          <p>Exporta en formato .csv para importar en cualquier sistema CRM o base de datos.</p>
+          <button class="btn-export btn-export-blue" onclick="exportar('csv')">Descargar CSV</button>
+        </div>
+
+        <div class="export-card" id="exp-pdf">
+          <div class="export-icon export-icon-red">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>
+          </div>
+          <h3>PDF Premium</h3>
+          <p>Reporte PDF ejecutivo con formato profesional para compartir con el cliente.</p>
+          <button class="btn-export btn-export-red" onclick="exportar('pdf')">Descargar PDF</button>
+        </div>
+
+        <div class="export-card" id="exp-html">
+          <div class="export-icon export-icon-orange">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <h3>HTML Interactivo</h3>
+          <p>Reporte web con botones de WhatsApp para contactar leads desde el navegador.</p>
+          <button class="btn-export btn-export-orange" onclick="exportar('html')">Descargar HTML</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECCIÓN SUBIR ── -->
+    <section id="section-subir" class="section hidden">
+      <div class="upload-area" id="upload-drop-area">
+        <div class="upload-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <h3>Arrastra tus archivos aquí</h3>
+        <p>CSV o Excel (.xlsx) — Puedes subir múltiples archivos a la vez</p>
+        <label class="btn-primary" style="cursor:pointer">
+          Seleccionar archivos
+          <input type="file" id="file-input" accept=".csv,.xlsx" multiple style="display:none">
+        </label>
+      </div>
+      <div id="upload-results" class="upload-results hidden"></div>
+    </section>
+
+    <!-- ── SECCIÓN META ADS ── -->
+    <section id="section-meta" class="section hidden">
+      <div class="meta-card">
+        <div class="meta-header">
+          <div class="meta-logo">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </div>
+          <div>
+            <h2>Conexión Meta Ads</h2>
+            <p id="meta-connection-status" class="meta-status-text">Verificando conexión...</p>
+          </div>
+          <div id="meta-badge" class="meta-badge badge-disconnected">Desconectado</div>
+        </div>
+
+        <div class="meta-form">
+          <div class="field-group">
+            <label>Access Token de Meta</label>
+            <input type="password" id="meta-token-input" placeholder="Pega tu Access Token aquí..." class="filter-input" style="width:100%">
+            <p class="field-hint">Obtén el token desde developers.facebook.com → Graph API Explorer</p>
+          </div>
+          <div class="field-group">
+            <label>Ad Account ID</label>
+            <input type="text" id="meta-account-input" placeholder="act_XXXXXXXXXX" class="filter-input" style="width:100%">
+            <p class="field-hint">Ejemplo: act_123456789 (lo encuentras en Business Manager)</p>
+          </div>
+          <div class="meta-actions">
+            <button class="btn-primary" id="btn-guardar-meta">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Guardar y Conectar
+            </button>
+            <button class="btn-gold" id="btn-sync-meta">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Sincronizar Leads
+            </button>
+          </div>
+          <div id="meta-msg" class="meta-msg hidden"></div>
+        </div>
+
+        <div class="meta-info-box">
+          <h4>¿Cómo obtener el Access Token?</h4>
+          <ol>
+            <li>Ve a <strong>developers.facebook.com</strong></li>
+            <li>Abre <strong>Graph API Explorer</strong></li>
+            <li>Selecciona tu app y genera el token con permisos: <code>ads_management</code>, <code>leads_retrieval</code>, <code>pages_show_list</code>, <code>pages_manage_ads</code></li>
+            <li>Copia el token y pégalo arriba</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay" class="loading-overlay hidden">
+  <div class="loading-spinner">
+    <svg class="spin" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    <p id="loading-text">Cargando...</p>
+  </div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
