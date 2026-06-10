@@ -212,7 +212,7 @@
       <div class="filters-bar">
         <div class="filters-row">
           <div class="filter-group">
-            <label>Buscar</label>
+            <label>Buscar nombre</label>
             <div class="search-wrap">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input type="text" id="filter-busqueda" placeholder="Nombre del lead..." class="filter-input search-input">
@@ -220,38 +220,48 @@
           </div>
           <div class="filter-group">
             <label>Proyecto</label>
-            <select id="filter-proyecto" class="filter-select" multiple size="1"></select>
+            <select id="filter-proyecto" class="filter-select">
+              <option value="">Todos los proyectos</option>
+            </select>
           </div>
           <div class="filter-group">
             <label>Presupuesto</label>
-            <select id="filter-presupuesto" class="filter-select" multiple size="1"></select>
+            <select id="filter-presupuesto" class="filter-select">
+              <option value="">Todos</option>
+            </select>
           </div>
           <div class="filter-group">
             <label>Crédito</label>
-            <select id="filter-credito" class="filter-select" multiple size="1"></select>
+            <select id="filter-credito" class="filter-select">
+              <option value="">Todos</option>
+            </select>
           </div>
           <div class="filter-group">
             <label>Plataforma</label>
-            <select id="filter-plataforma" class="filter-select" multiple size="1"></select>
+            <select id="filter-plataforma" class="filter-select">
+              <option value="">Todas</option>
+            </select>
           </div>
           <div class="filter-group">
             <label>Campaña</label>
-            <select id="filter-campana" class="filter-select" multiple size="1"></select>
+            <select id="filter-campana" class="filter-select">
+              <option value="">Todas</option>
+            </select>
           </div>
         </div>
-        <div class="filters-row filters-row-2">
+        <div class="filters-row">
           <div class="filter-group">
             <label>Fecha desde</label>
-            <input type="date" id="filter-fecha-inicio" class="filter-input">
+            <input type="date" id="filter-fecha-inicio" class="filter-input" placeholder="dd/mm/aaaa">
           </div>
           <div class="filter-group">
             <label>Fecha hasta</label>
-            <input type="date" id="filter-fecha-fin" class="filter-input">
+            <input type="date" id="filter-fecha-fin" class="filter-input" placeholder="dd/mm/aaaa">
           </div>
-          <div class="filter-group filter-actions">
+          <div class="filter-group" style="justify-content:flex-end; flex-direction:row; align-items:flex-end; gap:8px;">
             <button id="btn-aplicar-filtros" class="btn-primary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-              Aplicar Filtros
+              Aplicar
             </button>
             <button id="btn-limpiar-filtros" class="btn-ghost">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>

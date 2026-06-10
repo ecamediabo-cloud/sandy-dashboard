@@ -197,7 +197,10 @@ const App = {
 
   poblarSelect(id, opciones) {
     const sel = document.getElementById(id);
+    // conservar primera opción "Todos"
+    const primera = sel.options[0];
     sel.innerHTML = '';
+    sel.appendChild(primera);
     opciones.forEach(op => {
       const opt = document.createElement('option');
       opt.value = op;
@@ -212,20 +215,20 @@ const App = {
       const params = new URLSearchParams();
       if (forzar) params.set('forzar', 'true');
 
-      const proyecto = this.getSelectValues('filter-proyecto');
-      if (proyecto.length) params.set('proyecto', proyecto.join('|'));
+      const proyecto = document.getElementById('filter-proyecto').value;
+      if (proyecto) params.set('proyecto', proyecto);
 
-      const presupuesto = this.getSelectValues('filter-presupuesto');
-      if (presupuesto.length) params.set('presupuesto', presupuesto.join('|'));
+      const presupuesto = document.getElementById('filter-presupuesto').value;
+      if (presupuesto) params.set('presupuesto', presupuesto);
 
-      const credito = this.getSelectValues('filter-credito');
-      if (credito.length) params.set('credito', credito.join('|'));
+      const credito = document.getElementById('filter-credito').value;
+      if (credito) params.set('credito', credito);
 
-      const plataforma = this.getSelectValues('filter-plataforma');
-      if (plataforma.length) params.set('plataforma', plataforma.join('|'));
+      const plataforma = document.getElementById('filter-plataforma').value;
+      if (plataforma) params.set('plataforma', plataforma);
 
-      const campana = this.getSelectValues('filter-campana');
-      if (campana.length) params.set('campana', campana.join('|'));
+      const campana = document.getElementById('filter-campana').value;
+      if (campana) params.set('campana', campana);
 
       const busqueda = document.getElementById('filter-busqueda').value.trim();
       if (busqueda) params.set('busqueda', busqueda);
@@ -248,9 +251,7 @@ const App = {
       this.renderTabla();
 
       // Guardar filtros activos para exportaciones
-      this.filtrosActivos = { proyecto: proyecto.join('|'), presupuesto: presupuesto.join('|'),
-        credito: credito.join('|'), plataforma: plataforma.join('|'),
-        campana: campana.join('|'), busqueda };
+      this.filtrosActivos = { proyecto, presupuesto, credito, plataforma, campana, busqueda };
 
     } catch (e) {
       toast('Error cargando leads', 'error');
@@ -259,15 +260,9 @@ const App = {
     }
   },
 
-  getSelectValues(id) {
-    const sel = document.getElementById(id);
-    return Array.from(sel.selectedOptions).map(o => o.value);
-  },
-
   limpiarFiltros() {
     ['filter-proyecto','filter-presupuesto','filter-credito','filter-plataforma','filter-campana'].forEach(id => {
-      const sel = document.getElementById(id);
-      Array.from(sel.options).forEach(o => o.selected = false);
+      document.getElementById(id).selectedIndex = 0;
     });
     document.getElementById('filter-busqueda').value = '';
     document.getElementById('filter-fecha-inicio').value = '';
