@@ -250,8 +250,12 @@ const App = {
 
       this.renderTabla();
 
-      // Guardar filtros activos para exportaciones
-      this.filtrosActivos = { proyecto, presupuesto, credito, plataforma, campana, busqueda };
+      // Guardar filtros activos para exportaciones (incluyendo fechas)
+      this.filtrosActivos = {
+        proyecto, presupuesto, credito, plataforma, campana, busqueda,
+        fecha_inicio: fi || '',
+        fecha_fin: ff || '',
+      };
 
     } catch (e) {
       toast('Error cargando leads', 'error');

@@ -493,17 +493,33 @@ def _df_desde_filtros(filtros_json: str) -> pd.DataFrame:
         return df
     try:
         f = json.loads(filtros_json)
+
+        # Filtros por columna
         for col, key in [('Proyecto','proyecto'), ('Presupuesto','presupuesto'),
                          ('Tipo de Crédito','credito'), ('Anuncio','anuncio'),
                          ('Campaña','campana'), ('Conjunto de Anuncios','conjunto'),
                          ('Zona','zona'), ('Plataforma','plataforma')]:
             val = f.get(key)
             if val and val not in ["Todos", "Todas"] and col in df.columns:
-                lista = val.split("|")
-                df = df[df[col].isin(lista)]
+                df = df[df[col].isin(val.split("|"))]
+
+        # Búsqueda por nombre
         busqueda = f.get('busqueda', '')
         if busqueda and 'Nombre completo' in df.columns:
             df = df[df['Nombre completo'].str.contains(busqueda, case=False, na=False)]
+
+        # Filtro por fechas
+        fecha_inicio = f.get('fecha_inicio', '')
+        fecha_fin = f.get('fecha_fin', '')
+        if fecha_inicio and fecha_fin and 'Fecha de Creación' in df.columns:
+            try:
+                fechas = pd.to_datetime(df['Fecha de Creación'], errors='coerce', utc=True)
+                fi = pd.to_datetime(fecha_inicio).tz_localize('UTC')
+                ff = pd.to_datetime(fecha_fin).tz_localize('UTC') + timedelta(days=1)
+                df = df[(fechas >= fi) & (fechas <= ff)]
+            except Exception:
+                pass
+
     except Exception:
         pass
     return df
