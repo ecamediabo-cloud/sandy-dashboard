@@ -523,8 +523,16 @@ body {
   outline: none;
   cursor: pointer;
   transition: border-color var(--transition);
+  width: 100%;
+  appearance: auto;
+  -webkit-appearance: auto;
 }
 .filter-select:focus { border-color: var(--gold); }
+.filter-select option {
+  background: #12121e;
+  color: #e8e8f0;
+  padding: 6px 12px;
+}
 
 .search-wrap { position: relative; }
 .search-wrap svg {
