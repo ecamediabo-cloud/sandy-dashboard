@@ -211,7 +211,7 @@
       <!-- Filtros -->
       <div class="filters-bar">
         <div class="filters-row">
-          <div class="filter-group">
+          <div class="filter-group" style="min-width:180px">
             <label>Buscar nombre</label>
             <div class="search-wrap">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -220,45 +220,43 @@
           </div>
           <div class="filter-group">
             <label>Proyecto</label>
-            <select id="filter-proyecto" class="filter-select">
-              <option value="">Todos los proyectos</option>
-            </select>
+            <div class="ms-wrap" id="ms-proyecto"><div class="ms-trigger"><span class="ms-label">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown"></div></div>
           </div>
           <div class="filter-group">
             <label>Presupuesto</label>
-            <select id="filter-presupuesto" class="filter-select">
-              <option value="">Todos</option>
-            </select>
+            <div class="ms-wrap" id="ms-presupuesto"><div class="ms-trigger"><span class="ms-label">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown"></div></div>
           </div>
           <div class="filter-group">
             <label>Crédito</label>
-            <select id="filter-credito" class="filter-select">
-              <option value="">Todos</option>
-            </select>
+            <div class="ms-wrap" id="ms-credito"><div class="ms-trigger"><span class="ms-label">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown"></div></div>
           </div>
           <div class="filter-group">
             <label>Plataforma</label>
-            <select id="filter-plataforma" class="filter-select">
-              <option value="">Todas</option>
-            </select>
+            <div class="ms-wrap" id="ms-plataforma"><div class="ms-trigger"><span class="ms-label">Todas</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown"></div></div>
           </div>
           <div class="filter-group">
             <label>Campaña</label>
-            <select id="filter-campana" class="filter-select">
-              <option value="">Todas</option>
-            </select>
+            <div class="ms-wrap" id="ms-campana"><div class="ms-trigger"><span class="ms-label">Todas</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown"></div></div>
+          </div>
+          <div class="filter-group">
+            <label>Conjunto de Anuncios</label>
+            <div class="ms-wrap" id="ms-conjunto"><div class="ms-trigger"><span class="ms-label">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown"></div></div>
+          </div>
+          <div class="filter-group">
+            <label>Anuncio</label>
+            <div class="ms-wrap" id="ms-anuncio"><div class="ms-trigger"><span class="ms-label">Todos</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown"></div></div>
           </div>
         </div>
         <div class="filters-row">
           <div class="filter-group">
             <label>Fecha desde</label>
-            <input type="date" id="filter-fecha-inicio" class="filter-input" placeholder="dd/mm/aaaa">
+            <input type="date" id="filter-fecha-inicio" class="filter-input">
           </div>
           <div class="filter-group">
             <label>Fecha hasta</label>
-            <input type="date" id="filter-fecha-fin" class="filter-input" placeholder="dd/mm/aaaa">
+            <input type="date" id="filter-fecha-fin" class="filter-input">
           </div>
-          <div class="filter-group" style="justify-content:flex-end; flex-direction:row; align-items:flex-end; gap:8px;">
+          <div class="filter-group" style="justify-content:flex-end;flex-direction:row;align-items:flex-end;gap:8px;">
             <button id="btn-aplicar-filtros" class="btn-primary">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
               Aplicar
@@ -269,6 +267,14 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <!-- Mini charts de leads filtrados -->
+      <div class="leads-charts-grid" id="leads-charts">
+        <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Por Presupuesto</h3></div><div id="lc-presupuesto" class="chart-container" style="height:200px"></div></div>
+        <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Por Crédito</h3></div><div id="lc-credito" class="chart-container" style="height:200px"></div></div>
+        <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Por Plataforma</h3></div><div id="lc-plataforma" class="chart-container" style="height:200px"></div></div>
+        <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Por Proyecto</h3></div><div id="lc-proyecto" class="chart-container" style="height:200px"></div></div>
       </div>
 
       <!-- Tabla de leads -->

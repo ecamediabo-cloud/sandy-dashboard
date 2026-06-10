@@ -436,6 +436,17 @@ async def upload_file(request: Request, files: List[UploadFile] = File(...)):
 def construir_df_filtrado(request: Request, params: dict) -> pd.DataFrame:
     return obtener_df_leads()
 
+def _nombre_desde_filtros(filtros_json: str, ext: str) -> str:
+    try:
+        f = json.loads(filtros_json) if filtros_json else {}
+        nombre_base = f.get('nombre_archivo', '').strip()
+        if nombre_base:
+            nombre_base = re.sub(r'[^\w\-]', '_', nombre_base)[:80]
+            return f"{nombre_base}.{ext}"
+    except Exception:
+        pass
+    return f"Leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"
+
 @app.get("/api/export/excel")
 async def export_excel(request: Request, filtros: str = Query("")):
     require_auth(request)
@@ -443,7 +454,7 @@ async def export_excel(request: Request, filtros: str = Query("")):
     output = io.BytesIO()
     df.to_excel(output, sheet_name='Leads', index=False, engine='openpyxl')
     output.seek(0)
-    nombre = f"Leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    nombre = _nombre_desde_filtros(filtros, 'xlsx')
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -456,7 +467,7 @@ async def export_csv(request: Request, filtros: str = Query("")):
     df = _df_desde_filtros(filtros)
     output = io.StringIO()
     df.to_csv(output, index=False)
-    nombre = f"Leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    nombre = _nombre_desde_filtros(filtros, 'csv')
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
@@ -468,7 +479,7 @@ async def export_pdf(request: Request, filtros: str = Query("")):
     require_auth(request)
     df = _df_desde_filtros(filtros)
     pdf_bytes = generar_pdf(df)
-    nombre = f"Reporte_Leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    nombre = _nombre_desde_filtros(filtros, 'pdf')
     return StreamingResponse(
         io.BytesIO(pdf_bytes),
         media_type="application/pdf",
@@ -480,7 +491,7 @@ async def export_html(request: Request, filtros: str = Query("")):
     require_auth(request)
     df = _df_desde_filtros(filtros)
     html = generar_html_reporte(df)
-    nombre = f"Reporte_Leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+    nombre = _nombre_desde_filtros(filtros, 'html')
     return StreamingResponse(
         iter([html]),
         media_type="text/html",
