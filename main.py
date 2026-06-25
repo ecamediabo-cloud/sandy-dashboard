@@ -718,35 +718,40 @@ def generar_pdf(df: pd.DataFrame) -> bytes:
     elementos.append(hdr_tbl)
     elementos.append(Spacer(1, 0.2*inch))
 
-    datos = [['Nombre', 'Teléfono', 'Correo', 'Presupuesto', 'Crédito', 'Proyecto', 'Zona', 'Fecha']]
+    datos = [['Nombre', 'Teléfono', 'Correo', 'Presupuesto', 'Crédito', 'Conjunto/Anuncio', 'Zona', 'Fecha']]
     for _, row in df.iterrows():
+        conjunto = str(row.get('Conjunto de Anuncios', ''))[:24].strip()
+        if not conjunto or conjunto == 'nan':
+            conjunto = str(row.get('Anuncio', ''))[:24].strip()
+
         datos.append([
-            str(row.get('Nombre completo', ''))[:28],
-            str(row.get('Teléfono', ''))[:14],
-            str(row.get('Correo', ''))[:28],
-            str(row.get('Presupuesto', ''))[:20],
-            str(row.get('Tipo de Crédito', ''))[:20],
-            str(row.get('Proyecto', ''))[:18],
-            str(row.get('Zona', ''))[:12],
+            str(row.get('Nombre completo', ''))[:30],
+            str(row.get('Teléfono', ''))[:15],
+            str(row.get('Correo', ''))[:32],
+            str(row.get('Presupuesto', ''))[:22],
+            str(row.get('Tipo de Crédito', ''))[:22],
+            conjunto,
+            str(row.get('Zona', ''))[:14],
             str(row.get('Fecha de Creación', ''))[:10],
         ])
 
-    tabla = Table(datos, colWidths=[1.6*inch, 1.0*inch, 1.8*inch, 1.4*inch, 1.4*inch, 1.3*inch, 0.9*inch, 0.8*inch])
+    tabla = Table(datos, colWidths=[1.7*inch, 1.0*inch, 1.9*inch, 1.4*inch, 1.4*inch, 1.5*inch, 0.9*inch, 0.8*inch])
     tabla.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), gold),
         ('TEXTCOLOR', (0,0), (-1,0), colors.white),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,0), 8),
+        ('FONTSIZE', (0,0), (-1,0), 7),
         ('ALIGN', (0,0), (-1,0), 'CENTER'),
-        ('FONTSIZE', (0,1), (-1,-1), 7),
+        ('ALIGN', (0,1), (-1,-1), 'LEFT'),
+        ('FONTSIZE', (0,1), (-1,-1), 6.5),
         ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
         ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor('#f9f9f9'), colors.white]),
         ('TEXTCOLOR', (0,1), (-1,-1), colors.HexColor('#222')),
-        ('GRID', (0,0), (-1,-1), 0.4, colors.HexColor('#ddd')),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-        ('LEFTPADDING', (0,0), (-1,-1), 4),
-        ('RIGHTPADDING', (0,0), (-1,-1), 4),
+        ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor('#ddd')),
+        ('TOPPADDING', (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+        ('LEFTPADDING', (0,0), (-1,-1), 3),
+        ('RIGHTPADDING', (0,0), (-1,-1), 3),
     ]))
     elementos.append(tabla)
     elementos.append(Spacer(1, 0.2*inch))
