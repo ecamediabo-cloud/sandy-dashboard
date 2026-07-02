@@ -290,16 +290,28 @@ const App = {
         return;
       }
       const data = await resp.json();
-      console.log('✅ Filtros cargados:', data);
+      console.log('✅ Filtros cargados:', {
+        proyectos: (data.proyectos || []).length,
+        presupuestos: (data.presupuestos || []).length,
+        creditos: (data.creditos || []).length,
+        plataformas: (data.plataformas || []).length,
+        campanas: (data.campanas || []).length,
+        conjuntos: (data.conjuntos || []).length,
+        anuncios: (data.anuncios || []).length,
+        zonas: (data.zonas || []).length,
+      });
+      console.log('DATA:', data);
 
-      MultiSelect.poblar('ms-proyecto',    data.proyectos   || []);
-      MultiSelect.poblar('ms-presupuesto', data.presupuestos|| []);
-      MultiSelect.poblar('ms-credito',     data.creditos    || []);
-      MultiSelect.poblar('ms-plataforma',  data.plataformas || []);
-      MultiSelect.poblar('ms-campana',     data.campanas    || []);
-      MultiSelect.poblar('ms-conjunto',    data.conjuntos   || []);
-      MultiSelect.poblar('ms-anuncio',     data.anuncios    || []);
-      MultiSelect.poblar('ms-zona',        data.zonas       || []);
+      const ids = ['ms-proyecto','ms-presupuesto','ms-credito','ms-plataforma',
+                   'ms-campana','ms-conjunto','ms-anuncio','ms-zona'];
+      const keys = ['proyectos','presupuestos','creditos','plataformas',
+                    'campanas','conjuntos','anuncios','zonas'];
+
+      ids.forEach((id, i) => {
+        const valores = data[keys[i]] || [];
+        console.log(`Poblando ${id} con ${valores.length} opciones`);
+        MultiSelect.poblar(id, valores);
+      });
     } catch(e) {
       console.error('❌ Exception en cargarFiltros:', e);
     }

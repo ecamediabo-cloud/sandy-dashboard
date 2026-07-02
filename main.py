@@ -427,7 +427,13 @@ async def get_filtros(request: Request):
             "zonas": unicos("Zona"),
             "plataformas": unicos("Plataforma"),
         }
-        print(f"✅ GET_FILTROS: Retornando {len(resultado)} filtros")
+        print(f"✅ GET_FILTROS: Resultado:")
+        print(f"  - Proyectos: {resultado['proyectos']}")
+        print(f"  - Presupuestos: {resultado['presupuestos']}")
+        print(f"  - Créditos: {resultado['creditos']}")
+        print(f"  - Plataformas: {resultado['plataformas']}")
+        print(f"  - Campañas: {resultado['campanas']}")
+        print(f"  - Conjuntos: {resultado['conjuntos']}")
         return JSONResponse(resultado)
     except Exception as e:
         print(f"❌ GET_FILTROS: Error: {str(e)}")
