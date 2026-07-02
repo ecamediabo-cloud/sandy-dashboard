@@ -414,17 +414,50 @@ async def upload_file(request: Request, files: List[UploadFile] = File(...)):
     resultados = []
     for archivo in files:
         try:
-            ext = Path(archivo.filename).suffix.lower()
-            if ext not in ['.csv', '.xlsx']:
-                resultados.append({"archivo": archivo.filename, "ok": False, "error": "Solo CSV o Excel"})
+            # Validar extensión (flexible con mayúsculas)
+            nombre_original = archivo.filename or ""
+            ext = Path(nombre_original).suffix.lower().strip()
+
+            # Aceptar .csv, .xlsx, .xls (incluso con espacios o caracteres raros)
+            extensiones_validas = ['.csv', '.xlsx', '.xls']
+            if ext not in extensiones_validas:
+                resultados.append({
+                    "archivo": nombre_original,
+                    "ok": False,
+                    "error": f"Extensión '{ext}' no válida. Usa CSV o Excel"
+                })
                 continue
-            ruta = os.path.join(config.CARPETA_DATOS, archivo.filename)
+
+            # Limpiar nombre: reemplazar caracteres especiales
+            nombre_limpio = re.sub(r'[^\w\s\-\.]', '', nombre_original)
+            nombre_limpio = re.sub(r'\s+', '_', nombre_limpio)  # espacios → guiones bajos
+            nombre_limpio = nombre_limpio[:200]  # limitar longitud
+
+            ruta = os.path.join(config.CARPETA_DATOS, nombre_limpio)
             contenido = await archivo.read()
+
+            if not contenido:
+                resultados.append({
+                    "archivo": nombre_original,
+                    "ok": False,
+                    "error": "Archivo vacío"
+                })
+                continue
+
             with open(ruta, 'wb') as f:
                 f.write(contenido)
-            resultados.append({"archivo": archivo.filename, "ok": True})
+
+            resultados.append({
+                "archivo": nombre_original,
+                "ok": True,
+                "guardado_como": nombre_limpio
+            })
         except Exception as e:
-            resultados.append({"archivo": archivo.filename, "ok": False, "error": str(e)[:80]})
+            resultados.append({
+                "archivo": archivo.filename or "desconocido",
+                "ok": False,
+                "error": str(e)[:80]
+            })
 
     # limpiar cache para que recargue
     if os.path.exists(CACHE_FILE):
