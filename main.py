@@ -390,27 +390,37 @@ async def get_leads(
 @app.get("/api/filtros")
 async def get_filtros(request: Request):
     require_auth(request)
-    df = obtener_df_leads()
-    if df.empty:
-        return JSONResponse({"proyectos": [], "presupuestos": [], "creditos": [],
-                             "anuncios": [], "campanas": [], "conjuntos": [],
-                             "zonas": [], "plataformas": []})
+    try:
+        df = obtener_df_leads()
+        print(f"📊 GET_FILTROS: DataFrame tiene {len(df)} rows")
 
-    def unicos(col):
-        if col not in df.columns:
-            return []
-        return sorted([str(v) for v in df[col].dropna().unique() if str(v).strip()])
+        if df.empty:
+            print("⚠️ GET_FILTROS: DataFrame vacío!")
+            return JSONResponse({"proyectos": [], "presupuestos": [], "creditos": [],
+                                 "anuncios": [], "campanas": [], "conjuntos": [],
+                                 "zonas": [], "plataformas": []})
 
-    return JSONResponse({
-        "proyectos": unicos("Proyecto"),
-        "presupuestos": unicos("Presupuesto"),
-        "creditos": unicos("Tipo de Crédito"),
-        "anuncios": unicos("Anuncio"),
-        "campanas": unicos("Campaña"),
-        "conjuntos": unicos("Conjunto de Anuncios"),
-        "zonas": unicos("Zona"),
-        "plataformas": unicos("Plataforma"),
-    })
+        def unicos(col):
+            if col not in df.columns:
+                return []
+            vals = sorted([str(v) for v in df[col].dropna().unique() if str(v).strip()])
+            return vals
+
+        resultado = {
+            "proyectos": unicos("Proyecto"),
+            "presupuestos": unicos("Presupuesto"),
+            "creditos": unicos("Tipo de Crédito"),
+            "anuncios": unicos("Anuncio"),
+            "campanas": unicos("Campaña"),
+            "conjuntos": unicos("Conjunto de Anuncios"),
+            "zonas": unicos("Zona"),
+            "plataformas": unicos("Plataforma"),
+        }
+        print(f"✅ GET_FILTROS: Retornando {len(resultado)} filtros")
+        return JSONResponse(resultado)
+    except Exception as e:
+        print(f"❌ GET_FILTROS: Error: {str(e)}")
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 @app.get("/api/stats")
 async def get_stats(request: Request):
