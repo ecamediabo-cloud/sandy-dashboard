@@ -178,12 +178,22 @@ def cargar_archivos_locales() -> pd.DataFrame:
                 mapeo[col] = 'Zona'
 
         df = df.rename(columns=mapeo)
-        columnas_ok = [c for c in df.columns if c in [
+
+        # Seleccionar columnas que existen, y agregar las faltantes vacías
+        columnas_esperadas = [
             'Nombre completo', 'Teléfono', 'Correo', 'Presupuesto',
             'Tipo de Crédito', 'Anuncio', 'Fecha de Creación', 'Proyecto',
             'Plataforma', 'Campaña', 'Conjunto de Anuncios', 'Zona'
-        ]]
+        ]
+
+        # Mantener solo las columnas que existen
+        columnas_ok = [c for c in columnas_esperadas if c in df.columns]
         df = df[columnas_ok].copy()
+
+        # Agregar columnas faltantes como vacías (para que los filtros funcionen)
+        for col in columnas_esperadas:
+            if col not in df.columns:
+                df[col] = ''
 
         if 'Teléfono' in df.columns:
             df['Teléfono'] = df['Teléfono'].apply(limpiar_telefono)
@@ -222,6 +232,17 @@ def obtener_df_leads(forzar=False) -> pd.DataFrame:
 
     if not df_final.empty:
         df_final = df_final.reset_index(drop=True)
+
+        # Asegurar que existan TODAS las columnas esperadas
+        columnas_esperadas = [
+            'Nombre completo', 'Teléfono', 'Correo', 'Presupuesto',
+            'Tipo de Crédito', 'Anuncio', 'Fecha de Creación', 'Proyecto',
+            'Plataforma', 'Campaña', 'Conjunto de Anuncios', 'Zona'
+        ]
+        for col in columnas_esperadas:
+            if col not in df_final.columns:
+                df_final[col] = ''
+
         guardar_cache(df_final)
 
     return df_final
@@ -390,8 +411,11 @@ async def get_filtros(request: Request):
         def unicos(col):
             if col not in df.columns:
                 return []
-            vals = sorted([str(v) for v in df[col].dropna().unique() if str(v).strip()])
-            return vals
+            # Obtener valores únicos, ignorar NaN y vacíos
+            vals = [str(v).strip() for v in df[col].dropna().unique()
+                    if pd.notna(v) and str(v).strip() and str(v).lower() != 'nan']
+            # Remover duplicados y ordenar
+            return sorted(list(set(vals)))
 
         resultado = {
             "proyectos": unicos("Proyecto"),
