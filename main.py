@@ -109,20 +109,36 @@ def cargar_archivos_locales() -> pd.DataFrame:
 
     for archivo in sorted(archivos):
         df = None
-        if archivo.suffix == '.xlsx':
-            try:
-                df = pd.read_excel(archivo, engine='openpyxl')
-            except Exception:
-                continue
-        else:
-            for enc in ['utf-16', 'utf-8', 'latin-1', 'iso-8859-1', 'cp1252']:
+        try:
+            # Intentar leer .xlsx o .xls
+            if archivo.suffix.lower() in ['.xlsx', '.xls']:
                 try:
-                    df = pd.read_csv(archivo, sep='\t', encoding=enc, on_bad_lines='skip')
-                    break
-                except Exception:
-                    continue
+                    df = pd.read_excel(archivo, engine='openpyxl')
+                except Exception as e_xlsx:
+                    # Si falla openpyxl, intentar con xlrd
+                    try:
+                        df = pd.read_excel(archivo, engine='xlrd')
+                    except Exception as e_xlrd:
+                        print(f"❌ Error leyendo Excel {archivo.name}: {str(e_xlsx)[:100]}")
+                        continue
+            else:
+                # CSV: intentar múltiples encodings y separadores
+                for sep in ['\t', ',', ';']:
+                    for enc in ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252', 'utf-16']:
+                        try:
+                            df = pd.read_csv(archivo, sep=sep, encoding=enc, on_bad_lines='skip')
+                            if not df.empty:
+                                break
+                        except Exception:
+                            continue
+                    if df is not None and not df.empty:
+                        break
 
-        if df is None or df.empty:
+            if df is None or df.empty:
+                print(f"⚠️ Archivo vacío o no leído: {archivo.name}")
+                continue
+        except Exception as e:
+            print(f"❌ Error procesando {archivo.name}: {str(e)[:100]}")
             continue
 
         nombre_proyecto = obtener_proyecto_del_nombre(archivo.name)
