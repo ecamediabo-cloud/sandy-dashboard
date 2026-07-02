@@ -63,12 +63,20 @@ def limpiar_telefono(telefono) -> Optional[str]:
         if pd.isna(telefono) or telefono is None:
             return None
         t = str(telefono).strip()
-        if not t:
+        if not t or t.lower() == 'nan':
             return None
+        # Quitar prefijos especiales
         for prefix in ['p:+', 'p:']:
             if t.startswith(prefix):
                 t = t[len(prefix):]
+        # Quitar el ".0" que queda de conversiones float → string
+        if t.endswith('.0'):
+            t = t[:-2]
+        # Quitar todos los caracteres no numéricos
         t = re.sub(r'[^\d]', '', t)
+        if not t or len(t) < 10:
+            return None
+        # Agregar +52 si falta y tiene 10 dígitos (formato mexicano sin código país)
         if t.startswith('52') and len(t) > 12:
             t = t[2:]
         if not t.startswith('52') and len(t) == 10:
@@ -107,158 +115,237 @@ def cargar_archivos_locales() -> pd.DataFrame:
     archivos = list(directorio.glob("*.csv")) + list(directorio.glob("*.xlsx")) + list(directorio.glob("*.xls"))
     df_consolidado = pd.DataFrame()
 
+    print(f"📁 Leyendo archivos de: {directorio}")
+    print(f"📊 Encontrados {len(archivos)} archivos")
+
+    columnas_esperadas = [
+        'Nombre completo', 'Teléfono', 'Correo', 'Presupuesto',
+        'Tipo de Crédito', 'Anuncio', 'Fecha de Creación', 'Proyecto',
+        'Plataforma', 'Campaña', 'Conjunto de Anuncios', 'Zona'
+    ]
+
     for archivo in sorted(archivos):
         df = None
-
-        # Leer archivo
         try:
             if archivo.suffix.lower() in ['.xlsx', '.xls']:
-                # Intentar openpyxl primero
                 try:
                     df = pd.read_excel(archivo, engine='openpyxl')
                 except:
-                    # Si falla, intentar xlrd
                     try:
                         df = pd.read_excel(archivo, engine='xlrd')
-                    except:
-                        print(f"❌ No se pudo leer Excel: {archivo.name}")
+                    except Exception as e:
+                        print(f"❌ Excel {archivo.name}: {str(e)[:60]}")
                         continue
             else:
-                # CSV: múltiples encodings y separadores
-                for sep in ['\t', ',', ';']:
-                    for enc in ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252', 'utf-16']:
-                        try:
-                            df = pd.read_csv(archivo, sep=sep, encoding=enc, on_bad_lines='skip')
-                            if not df.empty:
-                                break
-                        except:
-                            continue
-                    if df is not None and not df.empty:
-                        break
+                # CSV: Intentar primero con UTF-8 y coma (formato estándar)
+                try:
+                    # IMPORTANTE: dtype=str para evitar que pandas interprete los teléfonos como floats
+                    df = pd.read_csv(archivo, sep=',', encoding='utf-8', on_bad_lines='skip', dtype=str)
+                    print(f"   ✓ UTF-8 lectura exitosa")
+                except Exception as e1:
+                    print(f"   ⚠️  UTF-8 falló: {str(e1)[:40]}, intentando otros encodings...")
+                    # Luego intentar otros encodings/separadores
+                    for sep in [';', '\t']:
+                        for enc in ['latin-1', 'iso-8859-1', 'cp1252']:
+                            try:
+                                df = pd.read_csv(archivo, sep=sep, encoding=enc, on_bad_lines='skip', dtype=str)
+                                if not df.empty:
+                                    print(f"   ✓ Leído con {enc}/{sep}")
+                                    break
+                            except:
+                                continue
+                        if df is not None and not df.empty:
+                            break
 
-                if df is None or df.empty:
-                    print(f"⚠️ No se pudo leer CSV: {archivo.name}")
+                    if df is None or df.empty:
+                        print(f"⚠️  CSV {archivo.name}: No se pudo leer con ningún encoding")
+                        continue
+
+            if df is None or df.empty:
+                print(f"⚠️  {archivo.name}: DataFrame vacío")
+                continue
+
+            print(f"✓ {archivo.name}: {len(df)} registros, {len(df.columns)} columnas")
+
+            # Rellenar Proyecto si está vacío (extraer del nombre del archivo)
+            nombre_proyecto = obtener_proyecto_del_nombre(archivo.name)
+            if 'Proyecto' not in df.columns:
+                df['Proyecto'] = nombre_proyecto
+            else:
+                # Si la columna existe pero está vacía, rellenarla
+                df['Proyecto'] = df['Proyecto'].fillna(nombre_proyecto)
+                df.loc[df['Proyecto'].astype(str).str.strip() == '', 'Proyecto'] = nombre_proyecto
+
+            # Mapear columnas
+            mapeo = {}
+            tel_mapeado = False
+            for col in df.columns:
+                cl = col.strip().lower()
+                if not mapeo.get(col):  # Evitar sobrescribir
+                    if 'full name' in cl or 'nombre' in cl:
+                        mapeo[col] = 'Nombre completo'
+                    elif not tel_mapeado and any(x in cl for x in ['phone', 'telefono', 'teléfono', 'número_de_teléfono']):
+                        mapeo[col] = 'Teléfono'
+                        tel_mapeado = True
+                    elif any(x in cl for x in ['correo', 'email', 'correo_electrónico']):
+                        mapeo[col] = 'Correo'
+                    elif 'presupuesto' in cl:
+                        mapeo[col] = 'Presupuesto'
+                    elif any(x in cl for x in ['comprar', 'crédito', 'credito', 'tipo_de_crédito', 'tipo crédito']):
+                        mapeo[col] = 'Tipo de Crédito'
+                    elif any(x in cl for x in ['ad_id', 'ad_name', 'anuncio']):
+                        mapeo[col] = 'Anuncio'
+                    elif any(x in cl for x in ['created_time', 'fecha_de_creación', 'fecha de creación', 'fecha']):
+                        mapeo[col] = 'Fecha de Creación'
+                    elif 'platform' in cl:
+                        mapeo[col] = 'Plataforma'
+                    elif 'campaign_id' in cl or 'campaña' in cl or 'campaign' in cl:
+                        mapeo[col] = 'Campaña'
+                    elif 'adset_id' in cl or 'conjunto' in cl:
+                        mapeo[col] = 'Conjunto de Anuncios'
+                    elif 'zona' in cl:
+                        mapeo[col] = 'Zona'
+
+            if mapeo:
+                df = df.rename(columns=mapeo)
+
+            # Asegurar que todas las columnas esperadas existan
+            for col in columnas_esperadas:
+                if col not in df.columns:
+                    df[col] = ''
+
+            # Convertir Teléfono a string ANTES de limpiar (para evitar problemas con floats)
+            if 'Teléfono' in df.columns:
+                df['Teléfono'] = df['Teléfono'].astype(str).apply(lambda x: limpiar_telefono(x) if x and x.lower() != 'nan' else None)
+
+            # Consolidar - asegurar tipos de datos compatibles
+            if df_consolidado.empty:
+                df_consolidado = df.copy()
+            else:
+                try:
+                    # Convertir todos a string primero para evitar problemas de tipo
+                    for col in columnas_esperadas:
+                        if col in df_consolidado.columns:
+                            df_consolidado[col] = df_consolidado[col].astype(str)
+                        if col in df.columns:
+                            df[col] = df[col].astype(str)
+
+                    df_consolidado = pd.concat([df_consolidado, df], ignore_index=True, sort=False)
+                except Exception as e:
+                    print(f"   ⚠️  Error en concat: {str(e)[:100]}")
                     continue
+
         except Exception as e:
-            print(f"❌ Error leyendo {archivo.name}: {str(e)[:80]}")
+            print(f"❌ Error procesando {archivo.name}: {str(e)[:100]}")
+            import traceback
+            traceback.print_exc()
             continue
 
-        if df is None or df.empty:
-            continue
-
-        nombre_proyecto = obtener_proyecto_del_nombre(archivo.name)
-        df['Proyecto'] = nombre_proyecto
-
-        mapeo = {}
-        tel_mapeado = False
-        for col in df.columns:
-            cl = col.strip().lower()
-            if 'full name' in cl or 'nombre' in cl:
-                mapeo[col] = 'Nombre completo'
-            elif not tel_mapeado and any(x in cl for x in ['phone', 'telefono', 'teléfono']):
-                mapeo[col] = 'Teléfono'
-                tel_mapeado = True
-            elif any(x in cl for x in ['correo', 'email']):
-                mapeo[col] = 'Correo'
-            elif 'presupuesto' in cl:
-                mapeo[col] = 'Presupuesto'
-            elif any(x in cl for x in ['comprar', 'crédito', 'credito']):
-                mapeo[col] = 'Tipo de Crédito'
-            elif any(x in cl for x in ['ad_name', 'anuncio']):
-                mapeo[col] = 'Anuncio'
-            elif any(x in cl for x in ['created_time', 'fecha']):
-                mapeo[col] = 'Fecha de Creación'
-            elif 'platform' in cl:
-                mapeo[col] = 'Plataforma'
-            elif 'campaign' in cl or 'campaña' in cl:
-                mapeo[col] = 'Campaña'
-            elif 'adset' in cl or 'conjunto' in cl:
-                mapeo[col] = 'Conjunto de Anuncios'
-            elif 'zona' in cl:
-                mapeo[col] = 'Zona'
-
-        df = df.rename(columns=mapeo)
-
-        # Seleccionar columnas que existen, y agregar las faltantes vacías
-        columnas_esperadas = [
-            'Nombre completo', 'Teléfono', 'Correo', 'Presupuesto',
-            'Tipo de Crédito', 'Anuncio', 'Fecha de Creación', 'Proyecto',
-            'Plataforma', 'Campaña', 'Conjunto de Anuncios', 'Zona'
-        ]
-
-        # Mantener solo las columnas que existen
-        columnas_ok = [c for c in columnas_esperadas if c in df.columns]
-        df = df[columnas_ok].copy()
-
-        # Agregar columnas faltantes como vacías (para que los filtros funcionen)
-        for col in columnas_esperadas:
-            if col not in df.columns:
-                df[col] = ''
-
-        if 'Teléfono' in df.columns:
-            df['Teléfono'] = df['Teléfono'].apply(limpiar_telefono)
-
-        df_consolidado = df if df_consolidado.empty else pd.concat([df_consolidado, df], ignore_index=True, sort=False)
-
+    print(f"📊 Total consolidado: {len(df_consolidado)} registros")
     return df_consolidado
 
 def obtener_df_leads(forzar=False) -> pd.DataFrame:
-    if not forzar:
-        df_cache, _ = cargar_cache()
-        if not df_cache.empty:
-            return df_cache
-
-    df_local = cargar_archivos_locales()
-
-    df_meta = pd.DataFrame()
     try:
-        import meta_ads
-        token = meta_ads.obtener_token_meta()
-        if token:
-            df_meta = meta_ads.obtener_todos_leads_meta_sync(token)
-    except Exception:
-        pass
+        if not forzar:
+            df_cache, _ = cargar_cache()
+            if not df_cache.empty:
+                print(f"✅ Usando caché: {len(df_cache)} leads")
+                return df_cache
 
-    if not df_meta.empty and not df_local.empty:
-        df_final = pd.concat([df_meta, df_local], ignore_index=True, sort=False)
-        if 'Teléfono' in df_final.columns and 'Fecha de Creación' in df_final.columns:
-            df_final = df_final.drop_duplicates(subset=['Teléfono', 'Fecha de Creación'], keep='first')
-    elif not df_meta.empty:
-        df_final = df_meta
-    elif not df_local.empty:
-        df_final = df_local
-    else:
-        df_final = pd.DataFrame()
+        print("🔄 Cargando datos frescos...")
 
-    if not df_final.empty:
-        df_final = df_final.reset_index(drop=True)
+        # Cargar archivos locales CON MANEJO DE ERRORES
+        df_local = pd.DataFrame()
+        try:
+            df_local = cargar_archivos_locales()
+            print(f"✅ Archivos locales: {len(df_local)} leads")
+        except Exception as e:
+            print(f"⚠️  Error cargando archivos locales: {str(e)[:100]}")
+            # Continuar sin leads locales, al menos Meta Ads funcionará
 
-        # Asegurar que existan TODAS las columnas esperadas
-        columnas_esperadas = [
-            'Nombre completo', 'Teléfono', 'Correo', 'Presupuesto',
-            'Tipo de Crédito', 'Anuncio', 'Fecha de Creación', 'Proyecto',
-            'Plataforma', 'Campaña', 'Conjunto de Anuncios', 'Zona'
-        ]
-        for col in columnas_esperadas:
-            if col not in df_final.columns:
-                df_final[col] = ''
+        # Cargar datos de Meta Ads
+        df_meta = pd.DataFrame()
+        try:
+            import meta_ads
+            token = meta_ads.obtener_token_meta()
+            if token:
+                df_meta = meta_ads.obtener_todos_leads_meta_sync(token)
+                print(f"✅ Meta Ads: {len(df_meta)} leads")
+        except Exception as e:
+            print(f"⚠️  Error cargando Meta Ads: {str(e)[:100]}")
+            pass
 
-        guardar_cache(df_final)
+        # Consolidar
+        if not df_meta.empty and not df_local.empty:
+            print(f"🔗 Consolidando: Meta ({len(df_meta)}) + Local ({len(df_local)})")
+            df_final = pd.concat([df_meta, df_local], ignore_index=True, sort=False)
+            if 'Teléfono' in df_final.columns and 'Fecha de Creación' in df_final.columns:
+                antes = len(df_final)
+                df_final = df_final.drop_duplicates(subset=['Teléfono', 'Fecha de Creación'], keep='first')
+                print(f"   → Deduplicados: {antes} → {len(df_final)}")
+        elif not df_meta.empty:
+            print("📊 Usando solo Meta Ads")
+            df_final = df_meta
+        elif not df_local.empty:
+            print("📊 Usando solo archivos locales")
+            df_final = df_local
+        else:
+            print("❌ Sin datos disponibles (Meta Ads ni archivos locales)")
+            df_final = pd.DataFrame()
 
-    return df_final
+        # Asegurar columnas y tipos
+        if not df_final.empty:
+            df_final = df_final.reset_index(drop=True)
+            columnas_esperadas = [
+                'Nombre completo', 'Teléfono', 'Correo', 'Presupuesto',
+                'Tipo de Crédito', 'Anuncio', 'Fecha de Creación', 'Proyecto',
+                'Plataforma', 'Campaña', 'Conjunto de Anuncios', 'Zona'
+            ]
+            for col in columnas_esperadas:
+                if col not in df_final.columns:
+                    df_final[col] = ''
+
+            # Convertir a string para seguridad
+            for col in df_final.columns:
+                df_final[col] = df_final[col].astype(str)
+
+            guardar_cache(df_final)
+            print(f"✅ Total final: {len(df_final)} leads")
+
+        return df_final
+
+    except Exception as e:
+        print(f"❌ Error crítico en obtener_df_leads: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return pd.DataFrame()
 
 def df_a_dict(df: pd.DataFrame) -> list:
-    df2 = df.copy()
-    for col in df2.columns:
-        if df2[col].dtype == 'object':
-            df2[col] = df2[col].fillna('').astype(str)
-        else:
-            df2[col] = df2[col].where(pd.notna(df2[col]), None)
-            try:
-                df2[col] = df2[col].astype(str).replace('None', '')
-            except Exception:
-                pass
-    return df2.to_dict(orient='records')
+    """Convierte DataFrame a lista de dicts, manejando errores de datos"""
+    try:
+        df2 = df.copy()
+        records = []
+
+        for idx, row in df2.iterrows():
+            record = {}
+            for col in df2.columns:
+                try:
+                    val = row[col]
+                    # Manejar NaN, None, NaT
+                    if pd.isna(val):
+                        record[col] = ''
+                    elif isinstance(val, pd.Timestamp):
+                        record[col] = str(val.date()) if hasattr(val, 'date') else str(val)
+                    else:
+                        record[col] = str(val).strip()
+                except Exception as e:
+                    record[col] = ''
+            records.append(record)
+
+        return records
+    except Exception as e:
+        print(f"❌ Error en df_a_dict: {str(e)}")
+        return []
 
 # ── rutas HTML ─────────────────────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)
@@ -369,11 +456,15 @@ async def get_leads(
 
     if fecha_inicio and fecha_fin and 'Fecha de Creación' in df.columns:
         try:
-            fechas = pd.to_datetime(df['Fecha de Creación'], errors='coerce', utc=True)
-            fi = pd.to_datetime(fecha_inicio).tz_localize('UTC')
-            ff = pd.to_datetime(fecha_fin).tz_localize('UTC') + timedelta(days=1)
-            df = df[(fechas >= fi) & (fechas <= ff)]
-        except Exception:
+            fechas = pd.to_datetime(df['Fecha de Creación'], errors='coerce')
+            # Convertir a naive datetime si está timezone-aware
+            if fechas.dt.tz is not None:
+                fechas = fechas.dt.tz_localize(None)
+            fi = pd.to_datetime(fecha_inicio)
+            ff = pd.to_datetime(fecha_fin) + timedelta(days=1)
+            df = df[(fechas >= fi) & (fechas <= ff)].fillna(False)
+        except Exception as e:
+            print(f"⚠️  Error en filtro de fechas: {str(e)}")
             pass
 
     _, ts = cargar_cache()
@@ -630,11 +721,15 @@ def _df_desde_filtros(filtros_json: str) -> pd.DataFrame:
         fecha_fin = f.get('fecha_fin', '')
         if fecha_inicio and fecha_fin and 'Fecha de Creación' in df.columns:
             try:
-                fechas = pd.to_datetime(df['Fecha de Creación'], errors='coerce', utc=True)
-                fi = pd.to_datetime(fecha_inicio).tz_localize('UTC')
-                ff = pd.to_datetime(fecha_fin).tz_localize('UTC') + timedelta(days=1)
-                df = df[(fechas >= fi) & (fechas <= ff)]
-            except Exception:
+                fechas = pd.to_datetime(df['Fecha de Creación'], errors='coerce')
+                # Convertir a naive datetime si está timezone-aware
+                if fechas.dt.tz is not None:
+                    fechas = fechas.dt.tz_localize(None)
+                fi = pd.to_datetime(fecha_inicio)
+                ff = pd.to_datetime(fecha_fin) + timedelta(days=1)
+                df = df[(fechas >= fi) & (fechas <= ff)].fillna(False)
+            except Exception as e:
+                print(f"⚠️  Error en filtro de fechas (export): {str(e)}")
                 pass
 
     except Exception:
