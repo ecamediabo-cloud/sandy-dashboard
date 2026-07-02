@@ -110,9 +110,94 @@ def cargar_cache() -> tuple:
         pass
     return pd.DataFrame(), None
 
+def descargar_csvs_github() -> list:
+    """Descarga CSVs desde GitHub (datos_backup/) si no existen localmente"""
+    import requests
+
+    # URLs de GitHub (raw content)
+    repo_url = "https://raw.githubusercontent.com/ecamediabo-cloud/sandy-dashboard/main/datos_backup"
+
+    # Lista de archivos (obtenida del último push)
+    archivos = [
+        "RESIDENCIAL SAN ALBERTO _Leads_2026-03-30_2026-04-08.csv",
+        "SETERRA _Leads_2026-03-30_2026-04-08.csv",
+        "VILLA LA JOYA _Leads_2026-03-20_2026-04-08.csv",
+        "VILLAS LA JOYA ALBERCA _Leads_2026-03-30_2026-04-08.csv",
+        "Leads Sandy .csv",
+        "Leads Sandy Erhard 1-29 mayo.csv",
+        "Leads Sandy Erhard 11octubre a 14 noviembre 2.csv",
+        "Leads Sandy Erhard 11octubre a 14 noviembre.csv",
+        "Leads Sandy Erhard 12 de enero al 22 de enero.csv",
+        "Leads Sandy Erhard 19en.3feb.csv",
+        "Leads Sandy Erhard. Abril.csv",
+        "Leads Sandy Erhard. Febrero-Marzo.csv",
+        "Leads Sandy Erhard. junio.csv",
+        "Leads Sandy Erhard. marzo-abril.csv",
+        "Leads Sandy. 23 jul.04ago..csv",
+        "Leads Sanmdy Erhard 14jun-14jul.csv",
+        "Leads del 23 de enero al 3 de febrero Sandy Erhard.csv",
+        "Leads sandy erhard del 19 de diciembre al 27 de diciembre.csv",
+        "Leads sandy erhard del 27 de noviembre al 11 de diciembre 2.csv",
+        "Leads sandy erhard del 27 de noviembre al 11 de diciembre.csv",
+        "Resultados Mensual .csv",
+        "San alberto 2.csv",
+        "Villas de la joya 2.csv",
+        "leads Sandy Erhard del 28 de dic-11Enero.csv",
+        "leads Sandy erhard 20 - 26 nov  2.csv",
+        "leads Sandy erhard 20 - 26 nov .csv",
+        "leads Sandy erhard del 12 de diciembre al 19 de diciembre.csv",
+        "leads febrero abril.csv",
+        "leads sandy erhard 25nov-8dic.csv",
+        "leads sandy erhard. 5 julio.csv",
+        "monte sabino 2.csv",
+        "sandy Erhard Leads 15 nov-19nov 2.csv",
+        "sandy Erhard Leads 15 nov-19nov.csv",
+    ]
+
+    dataframes = []
+    for archivo in archivos:
+        try:
+            url = f"{repo_url}/{archivo.replace(' ', '%20')}"
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                df = pd.read_csv(io.StringIO(response.text), dtype=str)
+                print(f"✓ GitHub: {archivo} ({len(df)} registros)")
+                dataframes.append(df)
+        except Exception as e:
+            print(f"⚠️  {archivo}: {str(e)[:60]}")
+
+    return dataframes
+
 def cargar_archivos_locales() -> pd.DataFrame:
     directorio = Path(config.CARPETA_DATOS)
+
+    # Intentar leer localmente primero
     archivos = list(directorio.glob("*.csv")) + list(directorio.glob("*.xlsx")) + list(directorio.glob("*.xls"))
+
+    # Si no hay archivos locales, descargar de GitHub (en Render esto siempre ocurre)
+    if not archivos:
+        print(f"📁 No hay archivos locales, descargando de GitHub...")
+        dfs_github = descargar_csvs_github()
+        if dfs_github:
+            # Consolidar todos los DataFrames de GitHub
+            df_consolidado = pd.concat(dfs_github, ignore_index=True, sort=False) if len(dfs_github) > 1 else dfs_github[0]
+            print(f"✅ GitHub consolidado: {len(df_consolidado)} registros totales")
+
+            # Asegurar columnas
+            columnas_esperadas = [
+                'Nombre completo', 'Teléfono', 'Correo', 'Presupuesto',
+                'Tipo de Crédito', 'Anuncio', 'Fecha de Creación', 'Proyecto',
+                'Plataforma', 'Campaña', 'Conjunto de Anuncios', 'Zona'
+            ]
+            for col in columnas_esperadas:
+                if col not in df_consolidado.columns:
+                    df_consolidado[col] = ''
+
+            return df_consolidado
+        else:
+            print("❌ No se pudieron descargar archivos de GitHub")
+            return pd.DataFrame()
+
     df_consolidado = pd.DataFrame()
 
     print(f"📁 Leyendo archivos de: {directorio}")
