@@ -111,62 +111,50 @@ def cargar_cache() -> tuple:
     return pd.DataFrame(), None
 
 def descargar_csvs_github() -> list:
-    """Descarga CSVs desde GitHub (datos_backup/) si no existen localmente"""
+    """Descarga CSVs desde GitHub usando la API (dinámicamente)"""
     import requests
 
-    # URLs de GitHub (raw content)
-    repo_url = "https://raw.githubusercontent.com/ecamediabo-cloud/sandy-dashboard/main/datos_backup"
+    try:
+        # Usar GitHub API para obtener lista de archivos en datos_backup/
+        api_url = "https://api.github.com/repos/ecamediabo-cloud/sandy-dashboard/contents/datos_backup"
+        response = requests.get(api_url, timeout=10)
 
-    # Lista de archivos (obtenida del último push)
-    archivos = [
-        "RESIDENCIAL SAN ALBERTO _Leads_2026-03-30_2026-04-08.csv",
-        "SETERRA _Leads_2026-03-30_2026-04-08.csv",
-        "VILLA LA JOYA _Leads_2026-03-20_2026-04-08.csv",
-        "VILLAS LA JOYA ALBERCA _Leads_2026-03-30_2026-04-08.csv",
-        "Leads Sandy .csv",
-        "Leads Sandy Erhard 1-29 mayo.csv",
-        "Leads Sandy Erhard 11octubre a 14 noviembre 2.csv",
-        "Leads Sandy Erhard 11octubre a 14 noviembre.csv",
-        "Leads Sandy Erhard 12 de enero al 22 de enero.csv",
-        "Leads Sandy Erhard 19en.3feb.csv",
-        "Leads Sandy Erhard. Abril.csv",
-        "Leads Sandy Erhard. Febrero-Marzo.csv",
-        "Leads Sandy Erhard. junio.csv",
-        "Leads Sandy Erhard. marzo-abril.csv",
-        "Leads Sandy. 23 jul.04ago..csv",
-        "Leads Sanmdy Erhard 14jun-14jul.csv",
-        "Leads del 23 de enero al 3 de febrero Sandy Erhard.csv",
-        "Leads sandy erhard del 19 de diciembre al 27 de diciembre.csv",
-        "Leads sandy erhard del 27 de noviembre al 11 de diciembre 2.csv",
-        "Leads sandy erhard del 27 de noviembre al 11 de diciembre.csv",
-        "Resultados Mensual .csv",
-        "San alberto 2.csv",
-        "Villas de la joya 2.csv",
-        "leads Sandy Erhard del 28 de dic-11Enero.csv",
-        "leads Sandy erhard 20 - 26 nov  2.csv",
-        "leads Sandy erhard 20 - 26 nov .csv",
-        "leads Sandy erhard del 12 de diciembre al 19 de diciembre.csv",
-        "leads febrero abril.csv",
-        "leads sandy erhard 25nov-8dic.csv",
-        "leads sandy erhard. 5 julio.csv",
-        "monte sabino 2.csv",
-        "sandy Erhard Leads 15 nov-19nov 2.csv",
-        "sandy Erhard Leads 15 nov-19nov.csv",
-    ]
+        if response.status_code != 200:
+            print(f"⚠️  GitHub API error: {response.status_code}")
+            return []
 
-    dataframes = []
-    for archivo in archivos:
-        try:
-            url = f"{repo_url}/{archivo.replace(' ', '%20')}"
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                df = pd.read_csv(io.StringIO(response.text), dtype=str)
-                print(f"✓ GitHub: {archivo} ({len(df)} registros)")
-                dataframes.append(df)
-        except Exception as e:
-            print(f"⚠️  {archivo}: {str(e)[:60]}")
+        archivos_info = response.json()
+        print(f"📡 Encontrados {len(archivos_info)} archivos en GitHub")
 
-    return dataframes
+        dataframes = []
+        for item in archivos_info:
+            if item['type'] != 'file' or not item['name'].endswith('.csv'):
+                continue
+
+            try:
+                archivo = item['name']
+                # Usar download_url directo de la API (es más confiable que raw.githubusercontent.com)
+                download_url = item['download_url']
+
+                response = requests.get(download_url, timeout=10)
+                if response.status_code == 200:
+                    df = pd.read_csv(io.StringIO(response.text), dtype=str)
+                    print(f"✓ GitHub: {archivo} ({len(df)} registros)")
+                    dataframes.append(df)
+                else:
+                    print(f"⚠️  {archivo}: Status {response.status_code}")
+            except Exception as e:
+                print(f"⚠️  {archivo}: {str(e)[:60]}")
+                continue
+
+        print(f"✅ Total descargados: {len(dataframes)} archivos")
+        return dataframes
+
+    except Exception as e:
+        print(f"❌ Error en descargar_csvs_github: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return []
 
 def cargar_archivos_locales() -> pd.DataFrame:
     directorio = Path(config.CARPETA_DATOS)
