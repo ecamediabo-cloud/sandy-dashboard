@@ -110,51 +110,28 @@ def cargar_cache() -> tuple:
         pass
     return pd.DataFrame(), None
 
-def descargar_csvs_github() -> list:
-    """Descarga CSVs desde GitHub usando la API (dinámicamente)"""
+def descargar_csv_consolidado_github() -> pd.DataFrame:
+    """Descarga el archivo consolidado _LEADS_CONSOLIDADOS.csv desde GitHub"""
     import requests
 
     try:
-        # Usar GitHub API para obtener lista de archivos en datos_backup/
-        api_url = "https://api.github.com/repos/ecamediabo-cloud/sandy-dashboard/contents/datos_backup"
-        response = requests.get(api_url, timeout=10)
+        # URL directo al archivo raw en GitHub
+        url = "https://raw.githubusercontent.com/ecamediabo-cloud/sandy-dashboard/main/datos_backup/_LEADS_CONSOLIDADOS.csv"
 
-        if response.status_code != 200:
-            print(f"⚠️  GitHub API error: {response.status_code}")
-            return []
+        print(f"Descargando leads desde GitHub...")
+        response = requests.get(url, timeout=15)
 
-        archivos_info = response.json()
-        print(f"📡 Encontrados {len(archivos_info)} archivos en GitHub")
-
-        dataframes = []
-        for item in archivos_info:
-            if item['type'] != 'file' or not item['name'].endswith('.csv'):
-                continue
-
-            try:
-                archivo = item['name']
-                # Usar download_url directo de la API (es más confiable que raw.githubusercontent.com)
-                download_url = item['download_url']
-
-                response = requests.get(download_url, timeout=10)
-                if response.status_code == 200:
-                    df = pd.read_csv(io.StringIO(response.text), dtype=str)
-                    print(f"✓ GitHub: {archivo} ({len(df)} registros)")
-                    dataframes.append(df)
-                else:
-                    print(f"⚠️  {archivo}: Status {response.status_code}")
-            except Exception as e:
-                print(f"⚠️  {archivo}: {str(e)[:60]}")
-                continue
-
-        print(f"✅ Total descargados: {len(dataframes)} archivos")
-        return dataframes
+        if response.status_code == 200:
+            df = pd.read_csv(io.StringIO(response.text), dtype=str)
+            print(f"OK GitHub: {len(df)} leads descargados")
+            return df
+        else:
+            print(f"ERROR GitHub: Status {response.status_code}")
+            return pd.DataFrame()
 
     except Exception as e:
-        print(f"❌ Error en descargar_csvs_github: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return []
+        print(f"ERROR descargando: {str(e)}")
+        return pd.DataFrame()
 
 def cargar_archivos_locales() -> pd.DataFrame:
     directorio = Path(config.CARPETA_DATOS)
@@ -164,13 +141,10 @@ def cargar_archivos_locales() -> pd.DataFrame:
 
     # Si no hay archivos locales, descargar de GitHub (en Render esto siempre ocurre)
     if not archivos:
-        print(f"📁 No hay archivos locales, descargando de GitHub...")
-        dfs_github = descargar_csvs_github()
-        if dfs_github:
-            # Consolidar todos los DataFrames de GitHub
-            df_consolidado = pd.concat(dfs_github, ignore_index=True, sort=False) if len(dfs_github) > 1 else dfs_github[0]
-            print(f"✅ GitHub consolidado: {len(df_consolidado)} registros totales")
+        print(f"No hay archivos locales, descargando de GitHub...")
+        df_consolidado = descargar_csv_consolidado_github()
 
+        if not df_consolidado.empty:
             # Asegurar columnas
             columnas_esperadas = [
                 'Nombre completo', 'Teléfono', 'Correo', 'Presupuesto',
@@ -181,9 +155,10 @@ def cargar_archivos_locales() -> pd.DataFrame:
                 if col not in df_consolidado.columns:
                     df_consolidado[col] = ''
 
+            print(f"OK Total GitHub: {len(df_consolidado)} leads")
             return df_consolidado
         else:
-            print("❌ No se pudieron descargar archivos de GitHub")
+            print("ERROR: No se pudo descargar de GitHub")
             return pd.DataFrame()
 
     df_consolidado = pd.DataFrame()
