@@ -144,7 +144,7 @@ const App = {
       MultiSelect.crear(id);
     });
 
-    const me = await fetch('/api/me').then(r => r.json());
+    const me = await fetch('/api/me', {credentials: 'include'}).then(r => r.json());
     if (me.autenticado) {
       this.usuario = me.usuario;
       this.esAdmin = me.es_admin;
@@ -284,7 +284,7 @@ const App = {
   // ── FILTROS ───────────────────────────────────────────────────
   async cargarFiltros() {
     try {
-      const data = await fetch('/api/filtros').then(r => r.json());
+      const data = await fetch('/api/filtros', {credentials: 'include'}).then(r => r.json());
       MultiSelect.poblar('ms-proyecto',    data.proyectos   || []);
       MultiSelect.poblar('ms-presupuesto', data.presupuestos|| []);
       MultiSelect.poblar('ms-credito',     data.creditos    || []);
@@ -332,7 +332,7 @@ const App = {
       if (fi)          params.set('fecha_inicio', fi);
       if (ff)          params.set('fecha_fin',    ff);
 
-      const resp = await fetch(`/api/leads?${params}`);
+      const resp = await fetch(`/api/leads?${params}`, {credentials: 'include'});
 
       if (!resp.ok) {
         const error = await resp.text();
@@ -458,7 +458,7 @@ const App = {
   // ── STATS / CHARTS DASHBOARD ──────────────────────────────────
   async cargarStats() {
     try {
-      const data = await fetch('/api/stats').then(r => r.json());
+      const data = await fetch('/api/stats', {credentials: 'include'}).then(r => r.json());
       document.getElementById('kpi-total').textContent     = data.total.toLocaleString();
       document.getElementById('kpi-hoy').textContent       = data.hoy.toLocaleString();
       document.getElementById('kpi-semana').textContent    = data.semana.toLocaleString();
@@ -528,7 +528,7 @@ const App = {
   // ── META ADS ──────────────────────────────────────────────────
   async checkMetaStatus() {
     try {
-      const data = await fetch('/api/meta/status').then(r => r.json());
+      const data = await fetch('/api/meta/status', {credentials: 'include'}).then(r => r.json());
       const dot  = document.getElementById('meta-status-dot');
       const badge = document.getElementById('meta-badge');
       const statusText = document.getElementById('meta-connection-status');
