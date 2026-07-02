@@ -107,56 +107,43 @@ def cargar_archivos_locales() -> pd.DataFrame:
     archivos = list(directorio.glob("*.csv")) + list(directorio.glob("*.xlsx")) + list(directorio.glob("*.xls"))
     df_consolidado = pd.DataFrame()
 
-    archivos_leidos = 0
-    archivos_fallidos = []
-
     for archivo in sorted(archivos):
         df = None
+
+        # Leer archivo
         try:
-            # Intentar leer .xlsx o .xls
             if archivo.suffix.lower() in ['.xlsx', '.xls']:
+                # Intentar openpyxl primero
                 try:
                     df = pd.read_excel(archivo, engine='openpyxl')
-                    print(f"✅ Leído Excel (openpyxl): {archivo.name} - {len(df)} rows")
-                except Exception as e_xlsx:
-                    # Si falla openpyxl, intentar con xlrd
+                except:
+                    # Si falla, intentar xlrd
                     try:
                         df = pd.read_excel(archivo, engine='xlrd')
-                        print(f"✅ Leído Excel (xlrd): {archivo.name} - {len(df)} rows")
-                    except Exception as e_xlrd:
-                        print(f"❌ Error leyendo Excel {archivo.name}: openpyxl={str(e_xlsx)[:50]}, xlrd={str(e_xlrd)[:50]}")
-                        archivos_fallidos.append(archivo.name)
+                    except:
+                        print(f"❌ No se pudo leer Excel: {archivo.name}")
                         continue
             else:
-                # CSV: intentar múltiples encodings y separadores
-                leido = False
+                # CSV: múltiples encodings y separadores
                 for sep in ['\t', ',', ';']:
-                    if leido:
-                        break
                     for enc in ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252', 'utf-16']:
                         try:
                             df = pd.read_csv(archivo, sep=sep, encoding=enc, on_bad_lines='skip')
                             if not df.empty:
-                                print(f"✅ Leído CSV: {archivo.name} (sep='{sep}', enc='{enc}') - {len(df)} rows")
-                                leido = True
                                 break
-                        except Exception:
+                        except:
                             continue
+                    if df is not None and not df.empty:
+                        break
 
-                if not leido or df is None or df.empty:
-                    print(f"⚠️ Archivo CSV no leído: {archivo.name}")
-                    archivos_fallidos.append(archivo.name)
+                if df is None or df.empty:
+                    print(f"⚠️ No se pudo leer CSV: {archivo.name}")
                     continue
-
-            if df is None or df.empty:
-                print(f"⚠️ Archivo vacío después de procesar: {archivo.name}")
-                archivos_fallidos.append(archivo.name)
-                continue
-
-            archivos_leidos += 1
         except Exception as e:
-            print(f"❌ Error procesando {archivo.name}: {str(e)[:100]}")
-            archivos_fallidos.append(archivo.name)
+            print(f"❌ Error leyendo {archivo.name}: {str(e)[:80]}")
+            continue
+
+        if df is None or df.empty:
             continue
 
         nombre_proyecto = obtener_proyecto_del_nombre(archivo.name)
