@@ -515,6 +515,15 @@ async def get_leads(
             print(f"⚠️  Error en filtro de fechas: {str(e)}")
             pass
 
+    # Ordenar por Fecha de Creación descendente (más reciente primero)
+    if 'Fecha de Creación' in df.columns and not df.empty:
+        try:
+            df['_fecha_sort'] = pd.to_datetime(df['Fecha de Creación'], errors='coerce')
+            df = df.sort_values('_fecha_sort', ascending=False)
+            df = df.drop('_fecha_sort', axis=1)
+        except Exception as e:
+            print(f"⚠️  No se pudo ordenar por fecha: {str(e)}")
+
     _, ts = cargar_cache()
     ts_str = ts.strftime("%d/%m/%Y %H:%M") if ts else None
 
