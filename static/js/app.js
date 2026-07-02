@@ -332,7 +332,16 @@ const App = {
       if (fi)          params.set('fecha_inicio', fi);
       if (ff)          params.set('fecha_fin',    ff);
 
-      const data = await fetch(`/api/leads?${params}`).then(r => r.json());
+      const resp = await fetch(`/api/leads?${params}`);
+
+      if (!resp.ok) {
+        const error = await resp.text();
+        console.error('HTTP Error:', resp.status, error);
+        toast(`Error ${resp.status}: ${error.slice(0, 100)}`, 'error');
+        return;
+      }
+
+      const data = await resp.json();
       this.leads = data.leads || [];
 
       document.getElementById('leads-badge').textContent = this.leads.length;
@@ -352,7 +361,8 @@ const App = {
       };
 
     } catch(e) {
-      toast('Error cargando leads', 'error');
+      console.error('Exception en cargarLeads:', e);
+      toast(`Error: ${e.message}`, 'error');
     } finally {
       this.ocultarCargando();
     }
