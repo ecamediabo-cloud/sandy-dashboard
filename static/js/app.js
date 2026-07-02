@@ -284,7 +284,14 @@ const App = {
   // ── FILTROS ───────────────────────────────────────────────────
   async cargarFiltros() {
     try {
-      const data = await fetch('/api/filtros', {credentials: 'include'}).then(r => r.json());
+      const resp = await fetch('/api/filtros', {credentials: 'include'});
+      if (!resp.ok) {
+        console.error('❌ GET_FILTROS error:', resp.status, await resp.text());
+        return;
+      }
+      const data = await resp.json();
+      console.log('✅ Filtros cargados:', data);
+
       MultiSelect.poblar('ms-proyecto',    data.proyectos   || []);
       MultiSelect.poblar('ms-presupuesto', data.presupuestos|| []);
       MultiSelect.poblar('ms-credito',     data.creditos    || []);
@@ -292,7 +299,10 @@ const App = {
       MultiSelect.poblar('ms-campana',     data.campanas    || []);
       MultiSelect.poblar('ms-conjunto',    data.conjuntos   || []);
       MultiSelect.poblar('ms-anuncio',     data.anuncios    || []);
-    } catch(e) { console.warn('Error filtros:', e); }
+      MultiSelect.poblar('ms-zona',        data.zonas       || []);
+    } catch(e) {
+      console.error('❌ Exception en cargarFiltros:', e);
+    }
   },
 
   limpiarFiltros() {
