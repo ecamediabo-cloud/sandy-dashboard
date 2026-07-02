@@ -309,8 +309,10 @@ async def get_leads(
 ):
     require_auth(request)
     df = obtener_df_leads(forzar=forzar)
+    print(f"📊 GET_LEADS: DataFrame inicial tiene {len(df)} rows, columnas: {list(df.columns) if not df.empty else 'VACÍO'}")
 
     if df.empty:
+        print("❌ GET_LEADS: DataFrame vacío!")
         return JSONResponse({"leads": [], "total": 0, "filtros": {}, "ultima_actualizacion": None})
 
     # filtros
@@ -369,8 +371,18 @@ async def get_leads(
     _, ts = cargar_cache()
     ts_str = ts.strftime("%d/%m/%Y %H:%M") if ts else None
 
+    # DEBUG: Convertir a dict antes de retornar
+    try:
+        leads_dict = df_a_dict(df)
+        print(f"✅ GET_LEADS: Convertido a dict, {len(leads_dict)} records")
+        if leads_dict and len(leads_dict) > 0:
+            print(f"  Primer lead: {str(leads_dict[0])[:200]}")
+    except Exception as e:
+        print(f"❌ GET_LEADS: Error en df_a_dict: {str(e)}")
+        leads_dict = []
+
     return JSONResponse({
-        "leads": df_a_dict(df),
+        "leads": leads_dict,
         "total": len(df),
         "ultima_actualizacion": ts_str,
     })
