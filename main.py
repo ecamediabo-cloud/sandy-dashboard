@@ -136,30 +136,65 @@ def descargar_csv_consolidado_github() -> pd.DataFrame:
 def cargar_archivos_locales() -> pd.DataFrame:
     directorio = Path(config.CARPETA_DATOS)
 
-    # Intentar leer localmente primero
-    archivos = list(directorio.glob("*.csv")) + list(directorio.glob("*.xlsx")) + list(directorio.glob("*.xls"))
+    # 1. SIEMPRE descargar base de GitHub
+    print(f"Descargando datos base desde GitHub...")
+    df_github = descargar_csv_consolidado_github()
 
-    # Si no hay archivos locales, descargar de GitHub (en Render esto siempre ocurre)
-    if not archivos:
-        print(f"No hay archivos locales, descargando de GitHub...")
-        df_consolidado = descargar_csv_consolidado_github()
+    dfs = []
+    if not df_github.empty:
+        dfs.append(df_github)
+        print(f"OK GitHub: {len(df_github)} leads")
 
-        if not df_consolidado.empty:
-            # Asegurar columnas
-            columnas_esperadas = [
-                'Nombre completo', 'Teléfono', 'Correo', 'Presupuesto',
-                'Tipo de Crédito', 'Anuncio', 'Fecha de Creación', 'Proyecto',
-                'Plataforma', 'Campaña', 'Conjunto de Anuncios', 'Zona'
-            ]
-            for col in columnas_esperadas:
-                if col not in df_consolidado.columns:
-                    df_consolidado[col] = ''
+    # 2. Buscar archivos NUEVOS locales (que el usuario subió recientemente)
+    archivos_locales = list(directorio.glob("*.csv"))
 
-            print(f"OK Total GitHub: {len(df_consolidado)} leads")
-            return df_consolidado
+    if archivos_locales:
+        print(f"Encontrados {len(archivos_locales)} archivos locales")
+
+        for archivo in archivos_locales:
+            # Saltar el consolidado (es el que viene de GitHub)
+            if '_LEADS_CONSOLIDADOS' in archivo.name:
+                continue
+
+            try:
+                df = pd.read_csv(archivo, dtype=str, encoding='utf-8')
+                print(f"  OK Local: {archivo.name} ({len(df)} registros)")
+                dfs.append(df)
+            except Exception as e:
+                print(f"  ERROR: {archivo.name}: {str(e)[:60]}")
+                continue
+
+    # 3. Consolidar GitHub + archivos locales nuevos
+    if dfs:
+        if len(dfs) > 1:
+            df_consolidado = pd.concat(dfs, ignore_index=True)
+            print(f"Consolidados (antes dedup): {len(df_consolidado)} leads")
         else:
-            print("ERROR: No se pudo descargar de GitHub")
-            return pd.DataFrame()
+            df_consolidado = dfs[0]
+
+        # 4. Deduplicar por Teléfono + Fecha
+        if 'Teléfono' in df_consolidado.columns and 'Fecha de Creación' in df_consolidado.columns:
+            duplicados = df_consolidado.duplicated(subset=['Teléfono', 'Fecha de Creación'], keep='first')
+            if duplicados.sum() > 0:
+                print(f"Duplicados encontrados: {duplicados.sum()}")
+                df_consolidado = df_consolidado[~duplicados]
+                print(f"Después dedup: {len(df_consolidado)} leads")
+
+        # 5. Asegurar columnas
+        columnas_esperadas = [
+            'Nombre completo', 'Teléfono', 'Correo', 'Presupuesto',
+            'Tipo de Crédito', 'Anuncio', 'Fecha de Creación', 'Proyecto',
+            'Plataforma', 'Campaña', 'Conjunto de Anuncios', 'Zona'
+        ]
+        for col in columnas_esperadas:
+            if col not in df_consolidado.columns:
+                df_consolidado[col] = ''
+
+        print(f"OK TOTAL: {len(df_consolidado)} leads (GitHub + Local)")
+        return df_consolidado
+    else:
+        print("ERROR: No hay datos disponibles")
+        return pd.DataFrame()
 
     df_consolidado = pd.DataFrame()
 
